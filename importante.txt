@@ -1,0 +1,81 @@
+ o que é o BDD, na prática?
+
+ A definição simplória de BDD, e repare que testes nem faz parte dessa definição. Para garantir que o que você desenvolveu está de acordo com a funcionalidade descrita, nós testamos.
+ O ponto principal é colaboração para melhorar o entendimento das funcionalidades a implementar.
+
+
+
+Testes com o Selenium:
+É muito importante deixar o sistema em um estado inicial conhecido e comum entre todos os testes daquela feature.
+Uma estratégia é que dentro de uma mesma feature todos os testes acabem na mesma tela em que eles começaram ou todos iniciam a partir da tela inicial.
+
+
+
+Testes de UI devem ser criados em menor quantidade que testes de unidade.
+
+O feijão com arroz do uso do Selenium WebDriver compreende descobrir a melhor estratégia de captura de um elemento HTML que se deseja interagir e usar a classe By para criar objetos do tipo WebElement através do método findElement().
+
+Mudanças no HTML são constantes e necessárias. A aplicação web deve evoluir à medida que clientes e usuários aumentam seu entendimento sobre suas demandas. Por isso é necessário escrever código de teste que minimize o impacto dessas mudanças e o padrão Page Object existe para cumprir esse objetivo.
+
+A estratégia mais forte de localização de um elemento é através do nome de sua tag HTML através do método estático TagName.
+
+
+
+PageObject é um padrão de projeto para encapsular o acesso a uma pagina da aplicação
+
+todo o código especifico da interface com Selenium fica dentro do PageObject
+
+não devemos usar Selenium diretamente nas classe de "steps" do Cucumber
+
+o teste, mesmo com Selenium, deve sempre começar a partir de estado "limpo"
+
+a melhor estrategia de buscar um elemento na interface é usar a ID
+
+
+O Cucumber oferece uma alternativa ao uso das anotações como @Dado ou @Quando. Podemos implementar todos os steps de um cenários usando as famosas expressões lambda do Java8!
+
+Para tal, devemos definir uma dependência extra dentro do nosso pom.xml:
+
+<dependency>
+    <groupId>io.cucumber</groupId>
+    <artifactId>cucumber-java8</artifactId>
+    <version>${cucumber.version}</version>
+    <scope>test</scope>
+</dependency>
+
+Uma vez feita, podemos rescrever a classe com os steps. Importante é implementar a interface io.cucumber.java8.Pt que possui para cada anotacao um método. Todos os métodos devem ser definidos dentro do construtor da classe. Vejo o exemplo:
+
+
+public class LeilaoSteps implements io.cucumber.java8.Pt{
+
+	private LoginPage loginPage;
+	private LeiloesPage leiloesPage;
+	private NovoLeilaoPage novoLeilaoPage;
+	private Browser browser;
+	
+	public LeilaoSteps() {
+		Dado("um usuario logado", () -> {
+			this.browser = new Browser();
+			browser.seed();
+			loginPage = browser.getLoginPage();
+			leiloesPage = loginPage.realizaLoginComoFulano();
+		});
+		
+		Quando("acessa a pagina de novo leilao", () -> {
+			novoLeilaoPage = this.leiloesPage.visitaPaginaParaCriarUmNovoLeilao();
+		});
+		
+		Quando("prenche o formulario com dados validos", () -> {
+			this.leiloesPage = this.novoLeilaoPage.preencheForm("PC Novo", "1500", "01/11/2020");
+		});
+
+		Entao("volta para a pagina de leiloes", () -> {
+			Assert.assertTrue(this.leiloesPage.estaNaPaginaDeLeiloes());
+		});
+		
+		Entao("o novo leilao aparece na tabela", () -> {
+			this.leiloesPage.existe("PC Novo", "1500", "01/11/2020", "fulano");
+			this.browser.clean();
+		});
+	}
+}
